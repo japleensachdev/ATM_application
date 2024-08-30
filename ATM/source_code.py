@@ -1,80 +1,103 @@
-#for stopping program execution for some time
-import time
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
 
-print("Please insert Your CARD")
+# Initialize SQLite database
+def init_db():
+    conn = sqlite3.connect('atm.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS account (
+            id INTEGER PRIMARY KEY,
+            pin INTEGER,
+            balance REAL
+        )
+    ''')
+    # Insert a sample account
+    c.execute('INSERT OR IGNORE INTO account (id, pin, balance) VALUES (1, 1234, 5000)')
+    conn.commit()
+    conn.close()
 
-#for card processing
-time.sleep(5)
+# Function to handle user login
+def login():
+    pin = int(pin_entry.get())
+    conn = sqlite3.connect('atm.db')
+    c = conn.cursor()
+    c.execute('SELECT balance FROM account WHERE pin = ?', (pin,))
+    result = c.fetchone()
+    conn.close()
 
-password = 1234
+    if result:
+        global balance
+        balance = result[0]
+        show_main_menu()
+    else:
+        messagebox.showerror("Error", "Wrong PIN, please try again")
 
-#taking atm pin from user
-pin = int(input("enter your atm pin "))
+# Function to show the main menu
+def show_main_menu():
+    main_menu_frame.pack()
+    login_frame.pack_forget()
 
-#user account balance
-balance = 5000
+# Function to check balance
+def check_balance():
+    messagebox.showinfo("Balance", f"Your current balance is ${balance}")
 
-#checking pin is valid or not 
-if pin == password:
-    #loop will run user get free 
-    while True:
+# Function to withdraw money
+def withdraw():
+    amount = float(withdraw_entry.get())
+    if amount <= balance:
+        global balance
+        balance -= amount
+        conn = sqlite3.connect('atm.db')
+        c = conn.cursor()
+        c.execute('UPDATE account SET balance = ? WHERE pin = ?', (balance, 1234))
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Success", f"${amount} has been withdrawn. New balance: ${balance}")
+    else:
+        messagebox.showerror("Error", "Insufficient funds")
 
-        #Showing  info to user
+# Function to deposit money
+def deposit():
+    amount = float(deposit_entry.get())
+    global balance
+    balance += amount
+    conn = sqlite3.connect('atm.db')
+    c = conn.cursor()
+    c.execute('UPDATE account SET balance = ? WHERE pin = ?', (balance, 1234))
+    conn.commit()
+    conn.close()
+    messagebox.showinfo("Success", f"${amount} has been deposited. New balance: ${balance}")
 
-        print(""" 
-			1 == balance
-			2 == withdraw balance
-			3 == deposit balance
-			4 == exit
-			"""
-              )
+# Initialize database
+init_db()
 
-        try:    
-             #taking an option from user
-            option = int(input("Please enter your choise "))
-        except:
-            print("Please enter valid option")
-        
-        #for option 1        
-        if option == 1:
-            print(f"Your current balance is {balance}")
-                                     
-        if option == 2:
+# Create the main window
+root = tk.Tk()
+root.title("ATM Simulation")
 
-            withdraw_amount = int(input("please enter withdraw_amount "))
+# Create frames
+login_frame = tk.Frame(root)
+main_menu_frame = tk.Frame(root)
 
-            
+# Create login frame widgets
+tk.Label(login_frame, text="Enter your ATM PIN:").pack(pady=10)
+pin_entry = tk.Entry(login_frame)
+pin_entry.pack(pady=5)
+tk.Button(login_frame, text="Login", command=login).pack(pady=10)
+login_frame.pack(pady=20)
 
-            balance = balance - withdraw_amount
+# Create main menu frame widgets
+tk.Button(main_menu_frame, text="Check Balance", command=check_balance).pack(pady=5)
+tk.Label(main_menu_frame, text="Withdraw Amount:").pack(pady=5)
+withdraw_entry = tk.Entry(main_menu_frame)
+withdraw_entry.pack(pady=5)
+tk.Button(main_menu_frame, text="Withdraw", command=withdraw).pack(pady=5)
+tk.Label(main_menu_frame, text="Deposit Amount:").pack(pady=5)
+deposit_entry = tk.Entry(main_menu_frame)
+deposit_entry.pack(pady=5)
+tk.Button(main_menu_frame, text="Deposit", command=deposit).pack(pady=5)
+tk.Button(main_menu_frame, text="Exit", command=root.quit).pack(pady=10)
 
-            print(f"{withdraw_amount} is debited from your account")
-
-            
-
-            print(f"your updated balance is {balance}")
-
-            
-
-        if option == 3:
-
-            deposit_amount = int(input("please enter deposit_amount"))
-
-            balance = balance + deposit_amount
-
-            
-
-            print(f"{deposit_amount} is credited to your account")
-
-
-
-            print(f"your updated balance is {balance}")
-
-
-
-        if option == 4:
-
-            break
-
-
-else:
-    print("wrong pin Please try again")
+root.mainloop()
