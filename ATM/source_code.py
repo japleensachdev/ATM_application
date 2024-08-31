@@ -28,7 +28,7 @@ def login():
     conn.close()
 
     if result:
-        global balance
+        global balance  # Declare global here
         balance = result[0]
         show_main_menu()
     else:
@@ -45,9 +45,9 @@ def check_balance():
 
 # Function to withdraw money
 def withdraw():
+    global balance  # Declare global here
     amount = float(withdraw_entry.get())
     if amount <= balance:
-        global balance
         balance -= amount
         conn = sqlite3.connect('atm.db')
         c = conn.cursor()
@@ -60,8 +60,8 @@ def withdraw():
 
 # Function to deposit money
 def deposit():
+    global balance  # Declare global here
     amount = float(deposit_entry.get())
-    global balance
     balance += amount
     conn = sqlite3.connect('atm.db')
     c = conn.cursor()
